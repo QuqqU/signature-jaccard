@@ -1,2 +1,2 @@
-# signiture-jaccard
-signiture similarity / jaccard similarity
+# signature-jaccard
+signature similarity / jaccard similarity
