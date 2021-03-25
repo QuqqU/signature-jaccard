@@ -27,7 +27,8 @@ std::vector<std::vector<std::string> > CSVReader::read() {
             continue;
         }
         sheet.push_back(split(buf_line));
-        if (++idx > 100) break;
+        std::cout << idx++ << std::endl;
+        //if (++idx > 1000) break;
     }
     file.close();
 
@@ -47,7 +48,7 @@ std::vector<std::string> CSVReader::split(std::string str) {
     std::string buf;
 
     while (getline(ss, buf, delm)) {
-        if (buf.front() == '\"') buf = buf.substr(1, buf.length() - 2);
+        if (!buf.empty() && buf.front() == '\"') buf = buf.substr(1, buf.length() - 2);
         elements.push_back(buf);
     }
 
