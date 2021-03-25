@@ -85,7 +85,7 @@ int main() {
 		docs_mat.push_back(doc_mat);
 	}
 
-	// make signiture matrix
+	// make signature matrix
 	std::vector<std::vector<int>> sig_mat;
 	for (int i = 0; i < hash_table.size(); i++) {
 		std::vector<int> sig(docs.size(), std::numeric_limits<int>::max());
@@ -118,7 +118,7 @@ int main() {
 	};
 
 	std::cout << "=======================================================" << std::endl;
-	std::cout << "       signiture similarity / jaccard similarity       " << std::endl;
+	std::cout << "       signature similarity / jaccard similarity       " << std::endl;
 	std::cout << "=======================================================" << std::endl;
 	
 
