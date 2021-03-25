@@ -7,7 +7,7 @@ const std::string file = "test.csv";
 const std::string delimeter = ",";
 const int _K = 5;
 const int _HASH_FUNCS = 15;
-const int _SHINGLE_SIZE = 10;
+const int _SHINGLE_SIZE = 100;
 
 
 namespace Shingle {
