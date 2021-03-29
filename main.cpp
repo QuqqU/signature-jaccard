@@ -33,8 +33,8 @@ int main() {
 	CSVReader reader(file, delimeter, _DATA_SIZE);
 	auto sheet = reader.read();
 
-	std::cout.fixed;
-	std::cout.precision(4);
+	//std::cout.fixed;
+	//std::cout.precision(4);
 	freopen("stat_100.txt", "w", stdout);
 	std::cout << "=======================================================" << std::endl;
 	std::cout << "       signiture similarity / jaccard similarity       " << std::endl;
@@ -136,16 +136,17 @@ int main() {
 		int cnt = 0;
 		for (int i = 0; i < docs.size(); i++)
 			for (int j = i + 1; j < docs.size(); j++) {
-				auto sig1 = eval_sig(i, j);
-				auto sig2 = eval_jac(i, j);
+				double sig1 = eval_sig(i, j);
+				double sig2 = eval_jac(i, j);
 				/*
 				std::cout << "pair " << i << ", " << j << " : \t"
 					<< sig1 << "\t\t\t"
 					<< sig2 << std::endl;
 				*/
-				rlt += abs(sig1 - sig2);
+				rlt += abs(sig2 - sig1);
 				cnt++;
 			}
+		//std::cout << rlt << " " << cnt << std::endl;
 		std::cout << _HASH_SIZE << "\t : \t" << 1.0 * rlt / cnt << std::endl;
 	}
 	return 0;
