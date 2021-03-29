@@ -6,8 +6,7 @@
 const std::string file = "test.csv";
 const std::string delimeter = ",";
 const int _K = 5;
-const int _HASH_FUNCS = 15;
-const int _SHINGLE_SIZE = 100;
+const int _DATA_SIZE = 100;
 
 
 namespace Shingle {
@@ -31,8 +30,16 @@ int main() {
 	// col 0 - no.
 	// col 1 - str1
 	// col 2 - str2
-	CSVReader reader(file, delimeter, _SHINGLE_SIZE);
+	CSVReader reader(file, delimeter, _DATA_SIZE);
 	auto sheet = reader.read();
+
+	std::cout.fixed;
+	std::cout.precision(4);
+	freopen("stat_100.txt", "w", stdout);
+	std::cout << "=======================================================" << std::endl;
+	std::cout << "       signiture similarity / jaccard similarity       " << std::endl;
+	std::cout << "=======================================================" << std::endl;
+	std::cout << "_HASH_SIZE" << "\t : \t" << "rlt" << std::endl;
 
 	// K - shingle
 	Shingle::K = _K;
@@ -53,86 +60,93 @@ int main() {
 	
 	
 	// make permutation
-	std::vector<int> perm(_SHINGLE_SIZE);
+	std::vector<int> perm(_DATA_SIZE);
 	std::iota(perm.begin(), perm.end(), 0);
 	std::random_shuffle(perm.begin(), perm.end());
 	
-
-	// make hash table
-	std::vector<std::vector<int>> hash_table;
-	for (int i = 0; i < _HASH_FUNCS; i++) {
-		std::vector<int> buf;
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_int_distribution<int> dis(1, 100);
-		int hash_mul = dis(gen);
-		int hash_add = dis(gen);
-		auto hash = [&](int x) -> int { return (hash_mul * x + hash_add) % shingles.size(); };
-		for (int j = 0; j < shingles.size(); j++) {
-			buf.push_back(hash(j));
-		}
-		hash_table.push_back(buf);
-	}
-
-	// make reprensetation matrix
-	std::vector<std::vector<int>> docs_mat;
-	for (auto doc : docs) {
-		std::vector<int> doc_mat;
-		for (auto s : shingles) {
-			if (doc.find(s) == std::string::npos) doc_mat.push_back(0);
-			else doc_mat.push_back(1);
-		}
-		docs_mat.push_back(doc_mat);
-	}
-
-	// make signature matrix
-	std::vector<std::vector<int>> sig_mat;
-	for (int i = 0; i < hash_table.size(); i++) {
-		std::vector<int> sig(docs.size(), std::numeric_limits<int>::max());
-		for (int e_idx = 0; e_idx < shingles.size(); e_idx++) {
-			for (int d_idx = 0; d_idx < docs.size(); d_idx++) {
-				if (docs_mat[d_idx][e_idx]) sig[d_idx] = std::min(sig[d_idx], hash_table[i][e_idx]);
+	std::vector<int> HASHS;
+	HASHS.push_back(1);
+	HASHS.push_back(3);
+	HASHS.push_back(5);
+	HASHS.push_back(8);
+	HASHS.push_back(10);
+	HASHS.push_back(12);
+	for (auto _HASH_SIZE : HASHS) {
+		// make hash table
+		std::vector<std::vector<int>> hash_table;
+		for (int i = 0; i < _HASH_SIZE; i++) {
+			std::vector<int> buf;
+			std::random_device rd;
+			std::mt19937 gen(rd());
+			std::uniform_int_distribution<int> dis(1, 100);
+			int hash_mul = dis(gen);
+			int hash_add = dis(gen);
+			auto hash = [&](int x) -> int { return (hash_mul * x + hash_add) % shingles.size(); };
+			for (int j = 0; j < shingles.size(); j++) {
+				buf.push_back(hash(j));
 			}
+			hash_table.push_back(buf);
 		}
-		sig_mat.push_back(sig);
-	}
 
-	// evaluate
-	
-	auto eval_sig = [&](int doc1, int doc2) -> double {
+		// make reprensetation matrix
+		std::vector<std::vector<int>> docs_mat;
+		for (auto doc : docs) {
+			std::vector<int> doc_mat;
+			for (auto s : shingles) {
+				if (doc.find(s) == std::string::npos) doc_mat.push_back(0);
+				else doc_mat.push_back(1);
+			}
+			docs_mat.push_back(doc_mat);
+		}
+
+		// make signiture matrix
+		std::vector<std::vector<int>> sig_mat;
+		for (int i = 0; i < hash_table.size(); i++) {
+			std::vector<int> sig(docs.size(), std::numeric_limits<int>::max());
+			for (int e_idx = 0; e_idx < shingles.size(); e_idx++) {
+				for (int d_idx = 0; d_idx < docs.size(); d_idx++) {
+					if (docs_mat[d_idx][e_idx]) sig[d_idx] = std::min(sig[d_idx], hash_table[i][e_idx]);
+				}
+			}
+			sig_mat.push_back(sig);
+		}
+
+		// evaluate
+
+		auto eval_sig = [&](int doc1, int doc2) -> double {
+			int cnt = 0;
+			for (int i = 0; i < hash_table.size(); i++)
+				if (sig_mat[i][doc1] == sig_mat[i][doc2]) cnt++;
+			return 1.0 * cnt / hash_table.size();
+		};
+
+		auto eval_jac = [&](int doc1, int doc2) -> double {
+			int intersec = 0;
+			int uni = 0;
+			for (int i = 0; i < shingles.size(); i++) {
+				if (docs_mat[doc1][i] && docs_mat[doc2][i]) intersec++;
+				if (docs_mat[doc1][i] || docs_mat[doc2][i]) uni++;
+			}
+
+			return 1.0 * intersec / uni;
+		};
+
+
+		double rlt = 0;
 		int cnt = 0;
-		for (int i = 0; i < hash_table.size(); i++)
-			if (sig_mat[i][doc1] == sig_mat[i][doc2]) cnt++;
-		return 1.0 * cnt / hash_table.size();
-	};
-
-	auto eval_jac = [&](int doc1, int doc2) -> double {
-		int intersec = 0;
-		int uni = 0;
-		for (int i = 0; i < shingles.size(); i++) {
-			if (docs_mat[doc1][i] && docs_mat[doc2][i]) intersec++;
-			if (docs_mat[doc1][i] || docs_mat[doc2][i]) uni++;
-		}
-
-		return 1.0 * intersec / uni;
-	};
-
-	std::cout << "=======================================================" << std::endl;
-	std::cout << "       signature similarity / jaccard similarity       " << std::endl;
-	std::cout << "=======================================================" << std::endl;
-	
-
-	std::cout.fixed;
-	std::cout.precision(4);
-	//freopen("out_10.txt", "w", stdout);
-	for(int i = 0; i < docs.size(); i++)
-		for (int j = i + 1; j < docs.size(); j++) {
-			std::cout << "pair " << i << ", " << j << " : \t" 
-				<< eval_sig(i, j) << "\t\t\t" 
-				<< eval_jac(i, j) << std::endl;
-		}
-
-
-
+		for (int i = 0; i < docs.size(); i++)
+			for (int j = i + 1; j < docs.size(); j++) {
+				auto sig1 = eval_sig(i, j);
+				auto sig2 = eval_jac(i, j);
+				/*
+				std::cout << "pair " << i << ", " << j << " : \t"
+					<< sig1 << "\t\t\t"
+					<< sig2 << std::endl;
+				*/
+				rlt += abs(sig1 - sig2);
+				cnt++;
+			}
+		std::cout << _HASH_SIZE << "\t : \t" << 1.0 * rlt / cnt << std::endl;
+	}
 	return 0;
 }
