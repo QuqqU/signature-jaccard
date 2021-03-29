@@ -54,4 +54,3 @@ std::vector<std::string> CSVReader::split(std::string str) {
 
     return elements;
 }
-
